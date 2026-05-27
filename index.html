@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>סידור הושבה לחתונה</title>
+<script src="xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Playfair+Display:ital,wght@0,700;1,400&display=swap');
+
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-dark: #8B6914;
+    --cream: #FDF6E3;
+    --deep: #1A0F00;
+    --surface: #2A1A08;
+    --surface2: #3D2810;
+    --text: #F5E6C8;
+    --text-muted: #B8967A;
+    --success: #4CAF50;
+    --shadow: rgba(0,0,0,0.6);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--deep);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.05) 0%, transparent 50%);
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, var(--surface) 0%, var(--deep) 100%);
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    padding: 16px 20px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .header-title {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+  .header-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* NAV TABS */
+  .nav {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 12px 8px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: 'Heebo', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-bottom: 2px solid transparent;
+    position: relative;
+  }
+  .nav-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: rgba(201,168,76,0.05);
+  }
+  .nav-btn span { display: block; font-size: 18px; margin-bottom: 2px; }
+
+  /* PAGES */
+  .page { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .card-title {
+    font-size: 14px;
+    color: var(--gold);
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 2px dashed rgba(201,168,76,0.4);
+    border-radius: 12px;
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: rgba(201,168,76,0.03);
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+  .upload-zone .icon { font-size: 40px; margin-bottom: 12px; }
+  .upload-zone p { color: var(--text-muted); font-size: 14px; }
+  .upload-zone strong { color: var(--gold); }
+  #fileInput { display: none; }
+
+  /* STATUS BAR */
+  .status-bar {
+    background: rgba(76,175,80,0.15);
+    border: 1px solid rgba(76,175,80,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #81C784;
+    margin-bottom: 16px;
+  }
+  .status-bar.error { background: rgba(244,67,54,0.15); border-color: rgba(244,67,54,0.3); color: #EF9A9A; }
+
+  /* SEARCH */
+  .search-wrap { position: relative; margin-bottom: 16px; }
+  .search-input {
+    width: 100%;
+    padding: 14px 50px 14px 20px;
+    background: var(--surface2);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 50px;
+    color: var(--text);
+    font-family: 'Heebo', sans-serif;
+    font-size: 16px;
+    outline: none;
+    transition: all 0.3s;
+    text-align: right;
+  }
+  .search-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); }
+  .search-input::placeholder { color: var(--text-muted); }
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  /* SEARCH RESULTS */
+  .result-card {
+    background: linear-gradient(135deg, var(--surface2), var(--surface));
+    border: 1px solid rgba(201,168,76,0.35);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 10px;
+    animation: slideIn 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--gold);
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+  .result-name { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .result-table {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .table-badge {
+    background: var(--gold);
+    color: var(--deep);
+    font-size: 28px;
+    font-weight: 900;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Playfair Display', serif;
+  }
+  .result-table-label { font-size: 13px; color: var(--text-muted); }
+  .result-table-num { font-size: 15px; font-weight: 600; color: var(--gold-light); }
+  .result-extra { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+  .no-result {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 30px;
+    font-size: 15px;
+  }
+  .no-result span { display: block; font-size: 36px; margin-bottom: 12px; }
+
+  /* TABLE FORMAT INFO */
+  .format-box {
+    background: rgba(201,168,76,0.06);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 12px;
+  }
+  .format-box p { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .format-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .format-tag {
+    background: rgba(201,168,76,0.15);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  /* HALL MAP */
+  .hall-container {
+    background: var(--surface2);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .hall-label {
+    text-align: center;
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+  #hallSvg {
+    width: 100%;
+    touch-action: pan-y pinch-zoom;
+    display: block;
+  }
+
+  /* TABLE CIRCLE in SVG */
+  .table-circle { cursor: pointer; }
+  .table-circle circle { transition: all 0.2s; }
+  .table-circle:hover circle { filter: brightness(1.3); }
+  .table-circle.selected circle { stroke: #fff !important; stroke-width: 3 !important; }
+
+  /* EDIT PANEL */
+  .edit-panel {
+    background: var(--surface);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .edit-panel.visible { display: block; animation: fadeIn 0.3s ease; }
+  .edit-panel h3 { font-size: 14px; color: var(--gold); margin-bottom: 14px; font-weight: 700; }
+  .edit-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .edit-label { font-size: 13px; color: var(--text-muted); width: 80px; flex-shrink: 0; }
+  .edit-input {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    outline: none;
+    text-align: right;
+  }
+  .edit-input:focus { border-color: var(--gold); }
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+  .btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .btn-primary { background: var(--gold); color: var(--deep); }
+  .btn-primary:active { transform: scale(0.97); background: var(--gold-dark); }
+  .btn-secondary { background: var(--surface2); color: var(--text-muted); border: 1px solid rgba(201,168,76,0.2); }
+  .btn-danger { background: rgba(244,67,54,0.2); color: #EF9A9A; border: 1px solid rgba(244,67,54,0.3); }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-box {
+    background: var(--surface2);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-num { font-size: 28px; font-weight: 900; color: var(--gold); font-family: 'Playfair Display', serif; }
+  .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* GUEST LIST */
+  .guest-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .guest-item:last-child { border-bottom: none; }
+  .guest-name-text { font-size: 14px; color: var(--text); }
+  .guest-table-badge {
+    background: rgba(201,168,76,0.2);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .guests-scroll { max-height: 300px; overflow-y: auto; }
+  .guests-scroll::-webkit-scrollbar { width: 4px; }
+  .guests-scroll::-webkit-scrollbar-track { background: transparent; }
+  .guests-scroll::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
+
+  /* ORNAMENT */
+  .ornament {
+    text-align: center;
+    color: var(--gold);
+    opacity: 0.4;
+    font-size: 20px;
+    letter-spacing: 8px;
+    margin: 8px 0;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state .big-icon { font-size: 60px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state h2 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+  .empty-state p { font-size: 13px; line-height: 1.6; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--gold);
+    color: var(--deep);
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 700;
+    z-index: 9999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(201,168,76,0.4);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* SELECTED TABLE INFO */
+  .selected-info {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .selected-highlight { color: var(--gold); font-weight: 700; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">✦ סידור הושבה ✦</div>
+  <div class="header-sub">Wedding Seating Manager</div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('search')" id="tab-search">
+    <span>🔍</span>חיפוש
+  </button>
+  <button class="nav-btn" onclick="showPage('hall')" id="tab-hall">
+    <span>🗺️</span>מפת אולם
+  </button>
+  <button class="nav-btn" onclick="showPage('import')" id="tab-import">
+    <span>📥</span>ייבוא
+  </button>
+  <button class="nav-btn" onclick="showPage('list')" id="tab-list">
+    <span>👥</span>רשימה
+  </button>
+</nav>
+
+<div id="toast" class="toast"></div>
+
+<!-- SEARCH PAGE -->
+<div id="page-search" class="page active">
+  <div class="card">
+    <div class="card-title">🔍 חיפוש מוזמן</div>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" class="search-input" placeholder="הקלד שם מוזמן..." oninput="doSearch()" autocomplete="off">
+      <span class="search-icon">🔍</span>
+    </div>
+    <div id="searchResults"></div>
+  </div>
+
+  <div id="statsSection" style="display:none">
+    <div class="ornament">✦ ✦ ✦</div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-num" id="statGuests">0</div>
+        <div class="stat-label">סה"כ מוזמנים</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="statTables">0</div>
+        <div class="stat-label">שולחנות</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HALL MAP PAGE -->
+<div id="page-hall" class="page">
+  <div class="hall-container">
+    <div class="hall-label">✦ מפת האולם ✦</div>
+    <svg id="hallSvg" viewBox="0 0 360 500" xmlns="http://www.w3.org/2000/svg">
+      <!-- Background -->
+      <rect width="360" height="500" rx="16" fill="#1A0F00"/>
+      <rect x="8" y="8" width="344" height="484" rx="12" fill="none" stroke="#C9A84C" stroke-width="1" stroke-opacity="0.3"/>
+
+      <!-- Stage -->
+      <rect x="80" y="20" width="200" height="50" rx="8" fill="#2A1A08" stroke="#C9A84C" stroke-width="1.5"/>
+      <text x="180" y="52" text-anchor="middle" fill="#C9A84C" font-size="14" font-family="Heebo, sans-serif" font-weight="700">🎤 במה</text>
+
+      <!-- Dance floor -->
+      <rect x="110" y="200" width="140" height="100" rx="8" fill="#2A1A08" stroke="#C9A84C" stroke-width="1" stroke-dasharray="4,3" stroke-opacity="0.5"/>
+      <text x="180" y="258" text-anchor="middle" fill="#C9A84C" font-size="11" font-family="Heebo, sans-serif" opacity="0.6">רחבת ריקודים</text>
+
+      <!-- Entrance -->
+      <rect x="130" y="460" width="100" height="32" rx="6" fill="#2A1A08" stroke="#C9A84C" stroke-width="1"/>
+      <text x="180" y="481" text-anchor="middle" fill="#C9A84C" font-size="11" font-family="Heebo, sans-serif">🚪 כניסה</text>
+
+      <!-- Tables will be injected here -->
+      <g id="tablesGroup"></g>
+    </svg>
+  </div>
+
+  <div id="editPanel" class="edit-panel">
+    <h3>✏️ עריכת שולחן</h3>
+    <div id="selectedTableInfo" class="selected-info"></div>
+    <div class="edit-row">
+      <span class="edit-label">מספר שולחן:</span>
+      <input type="number" id="editTableNum" class="edit-input" placeholder="מספר">
+    </div>
+    <div class="edit-row">
+      <span class="edit-label">כיתוב:</span>
+      <input type="text" id="editTableLabel" class="edit-input" placeholder="שם/תיאור (אופציונלי)">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveTableEdit()">💾 שמור</button>
+      <button class="btn btn-secondary" onclick="closeEditPanel()">ביטול</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ℹ️ הסבר</div>
+    <p style="font-size:13px; color:var(--text-muted); line-height:1.7">
+      לחץ על שולחן כדי לראות את המוזמנים שיושבים בו ולערוך את מספרו.<br>
+      השולחנות נוצרים אוטומטית לפי הנתונים שייבאת.
+    </p>
+  </div>
+</div>
+
+<!-- IMPORT PAGE -->
+<div id="page-import" class="page">
+  <div class="card">
+    <div class="card-title">📥 ייבוא קובץ אקסל</div>
+
+    <div class="upload-zone" onclick="document.getElementById('fileInput').click()" id="uploadZone">
+      <div class="icon">📊</div>
+      <p><strong>לחץ לבחירת קובץ Excel</strong></p>
+      <p style="margin-top:6px; font-size:12px;">תומך בפורמטים: .xlsx, .xls, .csv</p>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFile(event)">
+
+    <div class="format-box">
+      <p>🗂️ <strong style="color:var(--text)">פורמט עמודות נדרש:</strong></p>
+      <div class="format-row">
+        <span class="format-tag">שם</span>
+        <span class="format-tag">שולחן</span>
+        <span style="font-size:11px; color:var(--text-muted); align-self:center">+ עמודות נוספות אופציונליות</span>
+      </div>
+      <p style="margin-top:10px; font-size:11px;">גם עמודות בעברית וגם באנגלית (Name, Table) נתמכות</p>
+    </div>
+  </div>
+
+  <div id="importStatus"></div>
+
+  <div class="card">
+    <div class="card-title">📋 דוגמת נתונים</div>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px">
+      הורד טבלת דוגמה להתחלה מהירה:
+    </p>
+    <button class="btn btn-secondary" style="width:100%" onclick="downloadSample()">
+      ⬇️ הורד קובץ דוגמה
+    </button>
+  </div>
+</div>
+
+<!-- GUEST LIST PAGE -->
+<div id="page-list" class="page">
+  <div id="listContent">
+    <div class="empty-state">
+      <div class="big-icon">👥</div>
+      <h2>אין נתונים עדיין</h2>
+      <p>ייבא קובץ Excel כדי לראות את רשימת המוזמנים</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let guests = [];
+let tables = {}; // tableNum -> {x, y, label, guests[]}
+let selectedTableId = null;
+
+// Default table positions layout
+const DEFAULT_TABLE_POSITIONS = [
+  // Left side
+  {x:55,  y:110}, {x:55,  y:170}, {x:55,  y:230},
+  {x:55,  y:300}, {x:55,  y:360}, {x:55,  y:420},
+  // Right side
+  {x:305, y:110}, {x:305, y:170}, {x:305, y:230},
+  {x:305, y:300}, {x:305, y:360}, {x:305, y:420},
+  // Top center
+  {x:130, y:100}, {x:180, y:90},  {x:230, y:100},
+  // Bottom center
+  {x:130, y:420}, {x:180, y:430}, {x:230, y:420},
+  // Extra
+  {x:130, y:170}, {x:230, y:170}, {x:130, y:360}, {x:230, y:360},
+];
+
+// ===== NAVIGATION =====
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'hall') renderHall();
+  if (name === 'list') renderGuestList();
+}
+
+// ===== FILE IMPORT =====
+function handleFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, {type: 'array'});
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
+
+      parseGuestData(rows);
+    } catch(err) {
+      showImportStatus('error', '❌ שגיאה בקריאת הקובץ: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value = '';
+}
+
+function parseGuestData(rows) {
+  if (!rows || rows.length < 2) {
+    showImportStatus('error', '❌ הקובץ ריק או לא תקין');
+    return;
+  }
+
+  const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
+
+  // Find name and table columns
+  const nameIdx = findColumnIndex(headers, ['שם', 'name', 'שם מלא', 'full name', 'שם_מלא']);
+  const tableIdx = findColumnIndex(headers, ['שולחן', 'table', 'מספר שולחן', 'table number', 'מס שולחן', 'מס_שולחן']);
+  const sideIdx = findColumnIndex(headers, ['צד', 'side', 'קבוצה', 'group']);
+  const notesIdx = findColumnIndex(headers, ['הערות', 'notes', 'note', 'remarks']);
+
+  if (nameIdx === -1) {
+    showImportStatus('error', '❌ לא נמצאה עמודת שם. ודא שיש עמודה בשם "שם" או "Name"');
+    return;
+  }
+  if (tableIdx === -1) {
+    showImportStatus('error', '❌ לא נמצאה עמודת שולחן. ודא שיש עמודה בשם "שולחן" או "Table"');
+    return;
+  }
+
+  guests = [];
+  const tableNums = new Set();
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || !row[nameIdx]) continue;
+    const name = String(row[nameIdx]).trim();
+    const tableNum = String(row[tableIdx] || '').trim();
+    if (!name || !tableNum) continue;
+
+    guests.push({
+      id: i,
+      name,
+      table: tableNum,
+      side: sideIdx !== -1 ? String(row[sideIdx] || '') : '',
+      notes: notesIdx !== -1 ? String(row[notesIdx] || '') : '',
+    });
+    tableNums.add(tableNum);
+  }
+
+  // Build tables map with default positions
+  const tableArr = Array.from(tableNums).sort((a, b) => {
+    const na = parseFloat(a), nb = parseFloat(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return a.localeCompare(b);
+  });
+
+  const oldTables = {...tables};
+  tables = {};
+  tableArr.forEach((num, i) => {
+    const pos = DEFAULT_TABLE_POSITIONS[i] || {x: 180, y: 250};
+    const old = oldTables[num];
+    tables[num] = {
+      x: old ? old.x : pos.x,
+      y: old ? old.y : pos.y,
+      label: old ? old.label : '',
+      num: num,
+    };
+  });
+
+  const count = guests.length;
+  const tCount = Object.keys(tables).length;
+  showImportStatus('success', `✅ יובאו ${count} מוזמנים ב-${tCount} שולחנות`);
+  updateStats();
+  showToast(`✅ ${count} מוזמנים יובאו בהצלחה!`);
+}
+
+function findColumnIndex(headers, variants) {
+  for (const v of variants) {
+    const idx = headers.indexOf(v.toLowerCase());
+    if (idx !== -1) return idx;
+  }
+  // Partial match
+  for (let i = 0; i < headers.length; i++) {
+    for (const v of variants) {
+      if (headers[i].includes(v.toLowerCase())) return i;
+    }
+  }
+  return -1;
+}
+
+function showImportStatus(type, msg) {
+  document.getElementById('importStatus').innerHTML =
+    `<div class="status-bar ${type === 'error' ? 'error' : ''}">${msg}</div>`;
+}
+
+// ===== SEARCH =====
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  const container = document.getElementById('searchResults');
+
+  if (!q) { container.innerHTML = ''; return; }
+  if (guests.length === 0) {
+    container.innerHTML = '<div class="no-result"><span>📭</span>אין נתונים. ייבא קובץ Excel תחילה.</div>';
+    return;
+  }
+
+  const results = guests.filter(g =>
+    g.name.includes(q) ||
+    g.name.toLowerCase().includes(q.toLowerCase())
+  ).slice(0, 10);
+
+  if (results.length === 0) {
+    container.innerHTML = '<div class="no-result"><span>🔍</span>לא נמצאו תוצאות עבור "' + q + '"</div>';
+    return;
+  }
+
+  container.innerHTML = results.map(g => {
+    const tableInfo = tables[g.table];
+    const displayName = tableInfo && tableInfo.label ? tableInfo.label : `שולחן ${g.table}`;
+    const extras = [g.side, g.notes].filter(Boolean).join(' · ');
+    return `
+    <div class="result-card">
+      <div class="result-name">${g.name}</div>
+      <div class="result-table">
+        <div class="table-badge">${g.table}</div>
+        <div>
+          <div class="result-table-label">מיקום ישיבה</div>
+          <div class="result-table-num">${displayName}</div>
+        </div>
+      </div>
+      ${extras ? `<div class="result-extra">📝 ${extras}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ===== STATS =====
+function updateStats() {
+  const statsSection = document.getElementById('statsSection');
+  if (guests.length > 0) {
+    statsSection.style.display = 'block';
+    document.getElementById('statGuests').textContent = guests.length;
+    document.getElementById('statTables').textContent = Object.keys(tables).length;
+  } else {
+    statsSection.style.display = 'none';
+  }
+}
+
+// ===== HALL MAP =====
+function renderHall() {
+  const g = document.getElementById('tablesGroup');
+  g.innerHTML = '';
+
+  Object.values(tables).forEach(t => {
+    const guestList = guests.filter(gu => gu.table === t.num);
+    const count = guestList.length;
+
+    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    group.setAttribute('class', 'table-circle' + (selectedTableId === t.num ? ' selected' : ''));
+    group.setAttribute('data-table', t.num);
+    group.setAttribute('transform', `translate(${t.x}, ${t.y})`);
+    group.addEventListener('click', () => selectTable(t.num));
+
+    // Shadow
+    const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    shadow.setAttribute('r', '22');
+    shadow.setAttribute('fill', 'rgba(0,0,0,0.4)');
+    shadow.setAttribute('cx', '2');
+    shadow.setAttribute('cy', '2');
+    group.appendChild(shadow);
+
+    // Main circle
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('r', '20');
+    circle.setAttribute('fill', selectedTableId === t.num ? '#C9A84C' : '#2A1A08');
+    circle.setAttribute('stroke', '#C9A84C');
+    circle.setAttribute('stroke-width', selectedTableId === t.num ? '3' : '1.5');
+    group.appendChild(circle);
+
+    // Table number
+    const numText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    numText.setAttribute('text-anchor', 'middle');
+    numText.setAttribute('dominant-baseline', 'central');
+    numText.setAttribute('fill', selectedTableId === t.num ? '#1A0F00' : '#C9A84C');
+    numText.setAttribute('font-size', '12');
+    numText.setAttribute('font-weight', '700');
+    numText.setAttribute('font-family', 'Heebo, sans-serif');
+    numText.setAttribute('y', count > 0 ? '-3' : '0');
+    numText.textContent = t.num;
+    group.appendChild(numText);
+
+    // Guest count
+    if (count > 0) {
+      const countText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      countText.setAttribute('text-anchor', 'middle');
+      countText.setAttribute('dominant-baseline', 'central');
+      countText.setAttribute('fill', selectedTableId === t.num ? '#1A0F00' : '#B8967A');
+      countText.setAttribute('font-size', '8');
+      countText.setAttribute('font-family', 'Heebo, sans-serif');
+      countText.setAttribute('y', '9');
+      countText.textContent = count + ' אורחים';
+      group.appendChild(countText);
+    }
+
+    // Label below if exists
+    if (t.label) {
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('fill', '#B8967A');
+      label.setAttribute('font-size', '9');
+      label.setAttribute('y', '28');
+      label.setAttribute('font-family', 'Heebo, sans-serif');
+      label.textContent = t.label;
+      group.appendChild(label);
+    }
+
+    g.appendChild(group);
+  });
+}
+
+function selectTable(tableNum) {
+  selectedTableId = tableNum;
+  renderHall();
+
+  const t = tables[tableNum];
+  const guestList = guests.filter(g => g.table === tableNum);
+
+  const panel = document.getElementById('editPanel');
+  panel.classList.add('visible');
+
+  document.getElementById('editTableNum').value = tableNum;
+  document.getElementById('editTableLabel').value = t.label || '';
+
+  const infoEl = document.getElementById('selectedTableInfo');
+  const names = guestList.slice(0, 5).map(g => g.name).join(', ');
+  const more = guestList.length > 5 ? ` ו-${guestList.length - 5} נוספים` : '';
+  infoEl.innerHTML = `שולחן <span class="selected-highlight">${tableNum}</span> · ${guestList.length} יושבים${guestList.length > 0 ? '<br><span style="font-size:11px">' + names + more + '</span>' : ''}`;
+}
+
+function saveTableEdit() {
+  if (!selectedTableId) return;
+  const newNum = document.getElementById('editTableNum').value.trim();
+  const newLabel = document.getElementById('editTableLabel').value.trim();
+
+  if (!newNum) { showToast('⚠️ הכנס מספר שולחן'); return; }
+
+  if (newNum !== selectedTableId && tables[newNum]) {
+    showToast('⚠️ מספר שולחן כבר קיים');
+    return;
+  }
+
+  const oldTable = {...tables[selectedTableId]};
+  delete tables[selectedTableId];
+
+  tables[newNum] = {...oldTable, num: newNum, label: newLabel};
+
+  // Update guests
+  guests.forEach(g => { if (g.table === selectedTableId) g.table = newNum; });
+
+  selectedTableId = newNum;
+  renderHall();
+  closeEditPanel();
+  showToast('✅ שולחן עודכן בהצלחה');
+  updateStats();
+}
+
+function closeEditPanel() {
+  document.getElementById('editPanel').classList.remove('visible');
+  selectedTableId = null;
+  renderHall();
+}
+
+// ===== GUEST LIST =====
+function renderGuestList() {
+  const container = document.getElementById('listContent');
+  if (guests.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="big-icon">👥</div><h2>אין נתונים עדיין</h2><p>ייבא קובץ Excel כדי לראות את רשימת המוזמנים</p></div>`;
+    return;
+  }
+
+  // Group by table
+  const byTable = {};
+  guests.forEach(g => {
+    if (!byTable[g.table]) byTable[g.table] = [];
+    byTable[g.table].push(g);
+  });
+
+  const sortedTables = Object.keys(byTable).sort((a, b) => {
+    const na = parseFloat(a), nb = parseFloat(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return a.localeCompare(b);
+  });
+
+  let html = `<div class="card">
+    <div class="card-title">👥 כל המוזמנים (${guests.length})</div>
+    <div class="guests-scroll">`;
+
+  sortedTables.forEach(t => {
+    const tLabel = tables[t] && tables[t].label ? ` · ${tables[t].label}` : '';
+    byTable[t].forEach(g => {
+      html += `<div class="guest-item">
+        <span class="guest-name-text">${g.name}</span>
+        <span class="guest-table-badge">שולחן ${g.table}${tLabel}</span>
+      </div>`;
+    });
+  });
+
+  html += `</div></div>`;
+  container.innerHTML = html;
+}
+
+// ===== SAMPLE DOWNLOAD =====
+function downloadSample() {
+  const data = [
+    ['שם', 'שולחן', 'צד', 'הערות'],
+    ['דוד כהן', '1', 'חתן', ''],
+    ['רחל לוי', '1', 'חתן', ''],
+    ['יוסי גרין', '2', 'כלה', 'ילד'],
+    ['מרים אברהם', '2', 'כלה', ''],
+    ['אבי שפירא', '3', 'חתן', ''],
+    ['שרה מזרחי', '3', 'כלה', ''],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'מוזמנים');
+  XLSX.writeFile(wb, 'דוגמה_מוזמנים.xlsx');
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ===== DRAG TO UPLOAD =====
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const fakeEvent = { target: { files: [file], value: '' } };
+    handleFile(fakeEvent);
+  }
+});
+
+// Init
+updateStats();
+
+// ===== ANDROID BRIDGE =====
+// Called by Android native when file is selected
+function receiveFileFromAndroid(base64Data, filename) {
+  try {
+    // Decode base64
+    const binary = atob(base64Data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    
+    const workbook = XLSX.read(bytes, {type: 'array'});
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, {header: 1});
+    parseGuestData(rows);
+    showPage('search');
+  } catch(err) {
+    showImportStatus('error', '❌ שגיאה בקריאת הקובץ: ' + err.message);
+    showPage('import');
+  }
+}
+
+// Check if running on Android
+if (typeof Android !== 'undefined') {
+  document.querySelector('.upload-zone').addEventListener('click', function(e) {
+    e.preventDefault();
+    // On Android, clicking triggers native file picker via WebChromeClient
+  });
+}
+</script>
+</body>
+</html>
